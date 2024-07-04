@@ -7,7 +7,6 @@ from queue import Queue
 import argparse
 from tqdm import tqdm
 
-# Function to parse command-line arguments
 def parse_args():
     parser = argparse.ArgumentParser(description='Ping Mullvad VPN servers to find the best one.')
     parser.add_argument('--max-concurrent-pings', type=int, default=10, help='Maximum number of concurrent pings. Default is 10.')
