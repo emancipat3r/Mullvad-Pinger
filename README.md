@@ -11,5 +11,20 @@ pip install -r requirements.txt
 
 ## Usage
 ```bash
+usage: mullvad_ping.py [-h] [--max-concurrent-pings MAX_CONCURRENT_PINGS]
+                       [--exclude-country EXCLUDE_COUNTRY] [--exclude-city EXCLUDE_CITY]
+                       [--exclude-state EXCLUDE_STATE]
 
+Ping Mullvad VPN servers to find the best one.
+
+options:
+  -h, --help            show this help message and exit
+  --max-concurrent-pings MAX_CONCURRENT_PINGS
+                        Maximum number of concurrent pings. Default is 10.
+  --exclude-country EXCLUDE_COUNTRY
+                        Exclude servers from this country.
+  --exclude-city EXCLUDE_CITY
+                        Exclude servers from this city.
+  --exclude-state EXCLUDE_STATE
+                        Exclude servers from this state abbreviation.
 ```
