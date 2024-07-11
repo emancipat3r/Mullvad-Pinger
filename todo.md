@@ -1,1 +1,1 @@
- - [ ] test
+ - [ ] After finding fastest server, ask user if they want to connect to it

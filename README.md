@@ -11,9 +11,8 @@ pip install -r requirements.txt
 
 ## Usage
 ```bash
-usage: mullvad_ping.py [-h] [--max-concurrent-pings MAX_CONCURRENT_PINGS]
-                       [--exclude-country EXCLUDE_COUNTRY] [--exclude-city EXCLUDE_CITY]
-                       [--exclude-state EXCLUDE_STATE]
+usage: mullvad_ping.py [-h] [--max-concurrent-pings MAX_CONCURRENT_PINGS] [--exclude-country-code EXCLUDE_COUNTRY_CODE] [--exclude-city-code EXCLUDE_CITY_CODE] [--exclude-state EXCLUDE_STATE]
+                       [--show-next-fastest] [--list-countries] [--list-cities] [--list-cities-in-country LIST_CITIES_IN_COUNTRY] [--list-providers] [--provider PROVIDER]
 
 Ping Mullvad VPN servers to find the best one.
 
@@ -21,10 +20,17 @@ options:
   -h, --help            show this help message and exit
   --max-concurrent-pings MAX_CONCURRENT_PINGS
                         Maximum number of concurrent pings. Default is 10.
-  --exclude-country EXCLUDE_COUNTRY
-                        Exclude servers from this country.
-  --exclude-city EXCLUDE_CITY
-                        Exclude servers from this city.
+  --exclude-country-code EXCLUDE_COUNTRY_CODE
+                        Exclude servers from this country code.
+  --exclude-city-code EXCLUDE_CITY_CODE
+                        Exclude servers from this city code.
   --exclude-state EXCLUDE_STATE
                         Exclude servers from this state abbreviation.
+  --show-next-fastest   Show the next 10 fastest pinging servers.
+  --list-countries      List all available countries.
+  --list-cities         List all available cities.
+  --list-cities-in-country LIST_CITIES_IN_COUNTRY
+                        List all cities in the specified country code.
+  --list-providers      List all server providers.
+  --provider PROVIDER   Filter servers by provider to find the fastest one.
 ```
