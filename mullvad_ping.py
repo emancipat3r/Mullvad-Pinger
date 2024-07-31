@@ -8,6 +8,9 @@ import argparse
 from rich.console import Console
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.table import Table
+from InquirerPy import inquirer
+from InquirerPy.base.control import Choice
+from InquirerPy.utils import get_style
 
 console = Console()
 
@@ -23,6 +26,9 @@ def parse_args():
     parser.add_argument('--list-cities-in-country', type=str, help='List all cities in the specified country code.')
     parser.add_argument('--list-providers', action='store_true', help='List all server providers.')
     parser.add_argument('--provider', type=str, help='Filter servers by provider to find the fastest one.')
+    parser.add_argument('--country-code', type=str, nargs='*', help='Filter servers by country code. Can specify multiple.')
+    parser.add_argument('--city-code', type=str, nargs='*', help='Filter servers by city code. Can specify multiple.')
+    parser.add_argument('--vpn-type', type=str, choices=['wg', 'ovpn'], help='Filter servers by VPN type (WG or OVPN).')
     return parser.parse_args()
 
 def fetch_mullvad_servers():
@@ -129,16 +135,24 @@ def find_best_mullvad_server(args):
         list_providers(servers)
         return
 
+    # Filter out servers based on user input
     if args.provider:
         servers = [s for s in servers if s.get('provider', '').lower() == args.provider.lower()]
-
-    # Filter out servers based on user input
     if args.exclude_country_code:
         servers = [s for s in servers if s.get('country_code', '').lower() != args.exclude_country_code.lower()]
     if args.exclude_city_code:
         servers = [s for s in servers if s.get('city_code', '').lower() != args.exclude_city_code.lower()]
     if args.exclude_state:
         servers = [s for s in servers if args.exclude_state.lower() not in s.get('city_name', '').lower()]
+    if args.country_code:
+        servers = [s for s in servers if s.get('country_code', '').lower() in [code.lower() for code in args.country_code]]
+    if args.city_code:
+        servers = [s for s in servers if s.get('city_code', '').lower() in [code.lower() for code in args.city_code]]
+    if args.vpn_type:
+        console.print(f"Filtering for VPN type: {args.vpn_type.lower()}")
+        console.print(f"Total servers before filtering: {len(servers)}")
+        servers = [s for s in servers if args.vpn_type.lower() in s.get('type', '').lower()]
+        console.print(f"Total servers after filtering: {len(servers)}")
 
     if not servers:
         console.print("[red]No servers available after filtering.[/red]")
@@ -178,12 +192,14 @@ def find_best_mullvad_server(args):
     table.add_column("Ping Time (ms)", justify="right", style="green")
     table.add_column("Country", style="magenta")
     table.add_column("City", style="yellow")
+    table.add_column("Provider", style="red")
 
     table.add_row(
         f"{best_server['hostname']}.mullvad.net",
         f"{best_ping:.3f}",
         f"{best_server.get('country_name', 'Unknown')}",
-        f"{best_server.get('city_name', 'Unknown')}"
+        f"{best_server.get('city_name', 'Unknown')}",
+        f"{best_server.get('provider', 'Unknown')}"
     )
 
     console.print(table)
@@ -195,16 +211,51 @@ def find_best_mullvad_server(args):
         table_next_fastest.add_column("Ping Time (ms)", justify="right", style="green")
         table_next_fastest.add_column("Country", style="magenta")
         table_next_fastest.add_column("City", style="yellow")
+        table_next_fastest.add_column("Provider", style="red")
 
         for ping, server in results[1:11]:
             table_next_fastest.add_row(
                 f"{server['hostname']}.mullvad.net",
                 f"{ping:.3f}",
                 f"{server.get('country_name', 'Unknown')}",
-                f"{server.get('city_name', 'Unknown')}"
+                f"{server.get('city_name', 'Unknown')}",
+                f"{server.get('provider', 'Unknown')}"
             )
 
         console.print(table_next_fastest)
+
+        # Prompt user to choose the fastest or from the next 10 fastest servers
+        choices = [Choice(value="fastest", name=f"[fastest] - {best_server['hostname']}.mullvad.net - {best_server.get('city_name', 'Unknown')}, {best_server.get('country_name', 'Unknown')} - {best_server.get('provider', 'Unknown')}")] + [
+            Choice(value=f"{i+1}", name=f"[{i+1}] - {results[i+1][1]['hostname']}.mullvad.net - {results[i+1][1].get('city_name', 'Unknown')}, {results[i+1][1].get('country_name', 'Unknown')} - {results[i+1][1].get('provider', 'Unknown')}") for i in range(10)
+        ]
+
+        custom_style = get_style(
+            {
+                "question": "#ff00ff bold",
+                "pointer": "#ff00ff bold",
+                "highlight": "#ff00ff bold",
+                "selected": "#ff00ff bold"
+            }
+        )
+
+        question = inquirer.select(
+            message="Which server do you want to use?",
+            choices=choices,
+            default="fastest",
+            pointer="❯",
+            style=custom_style,
+        )
+
+        user_choice = question.execute()
+
+        if user_choice == "fastest":
+            selected_server = best_server
+        else:
+            selected_server = results[int(user_choice) - 1][1]
+
+        console.print(f"\n[green]You selected the server: {selected_server['hostname']}.mullvad.net[/green]\n")
+        console.print("[yellow]Run the following command to connect to the selected server:[/yellow]")
+        console.print(f"[blue]mullvad relay set hostname {selected_server['hostname']}.mullvad.net && mullvad connect[/blue]")
 
 if __name__ == "__main__":
     args = parse_args()
