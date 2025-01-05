@@ -3,28 +3,24 @@
 import requests
 import subprocess
 import threading
+import json
 from queue import Queue
 import argparse
 from rich.console import Console
 from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
 from rich.table import Table
-from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
-from InquirerPy.utils import get_style
 
 console = Console()
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Ping Mullvad VPN servers to find the best one.')
     parser.add_argument('--max-concurrent-pings', type=int, default=10, help='Maximum number of concurrent pings. Default is 10.')
-    parser.add_argument('--exclude-country-code', type=str, help='Exclude servers from this country code.')
-    parser.add_argument('--exclude-city-code', type=str, help='Exclude servers from this city code.')
-    parser.add_argument('--exclude-state', type=str, help='Exclude servers from this state abbreviation.')
-    parser.add_argument('--show-next-fastest', action='store_true', help='Show the next 10 fastest pinging servers.')
+    parser.add_argument('--show-next-fastest', type=int, default=10, help='Show user specified amount of next fastest pinging servers.')
     parser.add_argument('--list-countries', action='store_true', help='List all available countries.')
     parser.add_argument('--list-cities', action='store_true', help='List all available cities.')
     parser.add_argument('--list-cities-in-country', type=str, help='List all cities in the specified country code.')
     parser.add_argument('--list-providers', action='store_true', help='List all server providers.')
+    parser.add_argument('--list-providers-in-country', type=str, help='List all server providers in the specified country code.')
     parser.add_argument('--provider', type=str, help='Filter servers by provider to find the fastest one.')
     parser.add_argument('--country-code', type=str, nargs='*', help='Filter servers by country code. Can specify multiple.')
     parser.add_argument('--city-code', type=str, nargs='*', help='Filter servers by city code. Can specify multiple.')
@@ -87,17 +83,67 @@ def list_cities_in_country(servers, country_code):
     
     for idx, (city_name, city_code, country_name) in enumerate(cities, start=1):
         wg_count, ovpn_count = count_server_types(servers, 'city_code', city_code)
-        table.add_row(str(idx), city_name, city_code, country_name, str(wg_count), str(ovpn_count))
+    table.add_row(str(idx), city_name, city_code, country_name, str(wg_count), str(ovpn_count))
     console.print(table)
 
 def list_providers(servers):
-    providers = sorted(set(server['provider'] for server in servers if 'provider' in server))
+    providers = []
+    for server in servers:
+        if ('provider' and 'country_name') in server:
+            provider, country = server['provider'], server['country_name']
+
+            existing_provider = None
+            for p in providers:
+                if p['provider'] == provider:
+                    existing_provider = p
+
+            if existing_provider:
+                if country not in existing_provider['countries']:
+                    existing_provider['countries'].append(country)
+
+            else:
+                providers.append({'provider': provider, 'countries': [country]})
+
+
     table = Table(title="Available Providers", style="bold blue")
     table.add_column("No.", style="bold white")
     table.add_column("Provider", style="cyan")
-    
-    for idx, provider in enumerate(providers, start=1):
-        table.add_row(str(idx), provider)
+    table.add_column("Serviced Countries", style="cyan")
+
+    for idx, provider_info in enumerate(providers, start=1):
+        provider_name = provider_info['provider']
+        countries = ", ".join(provider_info['countries'])
+        table.add_row(str(idx), provider_name, countries)
+    console.print(table)
+
+def list_providers_in_country(servers, country_code):
+    providers = []
+    for server in servers:
+        if ('provider' and 'country_name') in server and country_code == server['country_code']:
+            provider, country = server['provider'], server['country_name']
+
+            existing_provider = None
+            for p in providers:
+                if p['provider'] == provider:
+                    existing_provider = p
+
+            if existing_provider:
+                if country not in existing_provider['countries']:
+                    existing_provider['countries'].append(country)
+
+            else:
+                providers.append({'provider': provider, 'countries': [country]})
+
+
+    table = Table(title="Available Providers", style="bold blue")
+    table.add_column("No.", style="bold white")
+    table.add_column("Provider", style="cyan")
+    table.add_column("Serviced Countries", style="cyan")
+
+    for idx, provider_info in enumerate(providers, start=1):
+        provider_name = provider_info['provider']
+        countries = ", ".join(provider_info['countries'])
+        table.add_row(str(idx), provider_name, countries)
     console.print(table)
 
 def ping_server(server, results_queue, semaphore, progress_task_id, progress):
@@ -114,36 +160,42 @@ def ping_server(server, results_queue, semaphore, progress_task_id, progress):
             progress.update(progress_task_id, advance=1)
 
 def find_best_mullvad_server(args):
+
     servers = fetch_mullvad_servers()
+    
+    # If empty
     if not servers:
         console.print("[red]No servers fetched, exiting.[/red]")
         return
 
+    # If '--list-countries'
     if args.list_countries:
         list_countries(servers)
         return
 
+    # If '--list-cities'
     if args.list_cities:
         list_cities(servers)
         return
 
+    # Filtered list of cities based on '--list-cities-in-country {COUNTRY_CODE}'
     if args.list_cities_in_country:
         list_cities_in_country(servers, args.list_cities_in_country)
         return
 
+    # If '--list-providers
     if args.list_providers:
         list_providers(servers)
+        return
+
+    # Filtered list of cities based on '--list-providers-in-country {COUNTRY_CODE}'
+    if args.list_providers_in_country:
+        list_providers_in_country(servers, args.list_providers_in_country)
         return
 
     # Filter out servers based on user input
     if args.provider:
         servers = [s for s in servers if s.get('provider', '').lower() == args.provider.lower()]
-    if args.exclude_country_code:
-        servers = [s for s in servers if s.get('country_code', '').lower() != args.exclude_country_code.lower()]
-    if args.exclude_city_code:
-        servers = [s for s in servers if s.get('city_code', '').lower() != args.exclude_city_code.lower()]
-    if args.exclude_state:
-        servers = [s for s in servers if args.exclude_state.lower() not in s.get('city_name', '').lower()]
     if args.country_code:
         servers = [s for s in servers if s.get('country_code', '').lower() in [code.lower() for code in args.country_code]]
     if args.city_code:
@@ -206,14 +258,14 @@ def find_best_mullvad_server(args):
 
     if args.show_next_fastest and len(results) > 1:
         console.print("\n" + "=" * 80 + "\n", style="bold green")
-        table_next_fastest = Table(title="Next 10 Fastest Mullvad Servers", style="bold blue")
+        table_next_fastest = Table(title=f"Next {args.show_next_fastest} Fastest Mullvad Servers", style="bold blue")
         table_next_fastest.add_column("Hostname", style="cyan")
         table_next_fastest.add_column("Ping Time (ms)", justify="right", style="green")
         table_next_fastest.add_column("Country", style="magenta")
         table_next_fastest.add_column("City", style="yellow")
         table_next_fastest.add_column("Provider", style="red")
 
-        for ping, server in results[1:11]:
+        for ping, server in results[1:int(f"{(args.show_next_fastest + 1)}")]:
             table_next_fastest.add_row(
                 f"{server['hostname']}.mullvad.net",
                 f"{ping:.3f}",
@@ -223,39 +275,6 @@ def find_best_mullvad_server(args):
             )
 
         console.print(table_next_fastest)
-
-        # Prompt user to choose the fastest or from the next 10 fastest servers
-        choices = [Choice(value="fastest", name=f"[fastest] - {best_server['hostname']}.mullvad.net - {best_server.get('city_name', 'Unknown')}, {best_server.get('country_name', 'Unknown')} - {best_server.get('provider', 'Unknown')}")] + [
-            Choice(value=f"{i+1}", name=f"[{i+1}] - {results[i+1][1]['hostname']}.mullvad.net - {results[i+1][1].get('city_name', 'Unknown')}, {results[i+1][1].get('country_name', 'Unknown')} - {results[i+1][1].get('provider', 'Unknown')}") for i in range(10)
-        ]
-
-        custom_style = get_style(
-            {
-                "question": "#ff00ff bold",
-                "pointer": "#ff00ff bold",
-                "highlight": "#ff00ff bold",
-                "selected": "#ff00ff bold"
-            }
-        )
-
-        question = inquirer.select(
-            message="Which server do you want to use?",
-            choices=choices,
-            default="fastest",
-            pointer="❯",
-            style=custom_style,
-        )
-
-        user_choice = question.execute()
-
-        if user_choice == "fastest":
-            selected_server = best_server
-        else:
-            selected_server = results[int(user_choice) - 1][1]
-
-        console.print(f"\n[green]You selected the server: {selected_server['hostname']}.mullvad.net[/green]\n")
-        console.print("[yellow]Run the following command to connect to the selected server:[/yellow]")
-        console.print(f"[blue]mullvad relay set hostname {selected_server['hostname']}.mullvad.net && mullvad connect[/blue]")
 
 if __name__ == "__main__":
     args = parse_args()
