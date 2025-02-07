@@ -5,8 +5,9 @@ While ping response times are not a comprehensive measure of VPN tunnel speed, t
 
 ## Setup
 ```bash
-python3 -m venv myenv
+python3 -m venv .venv
 pip install -r requirements.txt
+source .venv/bin/activate 
 ```
 
 ## Usage
