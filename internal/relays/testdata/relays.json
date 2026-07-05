@@ -1,0 +1,120 @@
+{
+  "locations": {
+    "se-got": { "country": "Sweden", "city": "Gothenburg", "latitude": 57.70887, "longitude": 11.97456 },
+    "se-sto": { "country": "Sweden", "city": "Stockholm", "latitude": 59.3293, "longitude": 18.0686 },
+    "us-nyc": { "country": "USA", "city": "New York, NY", "latitude": 40.7128, "longitude": -74.006 },
+    "us-lax": { "country": "USA", "city": "Los Angeles, CA", "latitude": 34.0522, "longitude": -118.2437 },
+    "de-fra": { "country": "Germany", "city": "Frankfurt", "latitude": 50.1109, "longitude": 8.6821 },
+    "xx-nul": { "country": "Nowhere", "city": "Null Island" }
+  },
+  "wireguard": {
+    "port_ranges": [[51820, 51820]],
+    "ipv4_gateway": "10.64.0.1",
+    "ipv6_gateway": "fc00:bbbb:bbbb:bb01::1",
+    "relays": [
+      {
+        "hostname": "se-got-wg-001",
+        "active": true,
+        "owned": true,
+        "daita": true,
+        "provider": "Mullvad",
+        "location": "se-got",
+        "ipv4_addr_in": "185.213.154.68",
+        "ipv6_addr_in": "2a03:1b20:5:f011::a01f",
+        "public_key": "aXpQq2m6l8Xw1n2c3v4b5N6m7A8s9D0fG1hJ2kL3mN4="
+      },
+      {
+        "hostname": "se-sto-wg-001",
+        "active": true,
+        "owned": true,
+        "daita": false,
+        "provider": "Mullvad",
+        "location": "se-sto",
+        "ipv4_addr_in": "185.65.135.170",
+        "ipv6_addr_in": "2a03:1b20:1:f011::a01f",
+        "public_key": "bBpRr3n7m9Yx2o3d4w5c6O7n8B9t0E1gH2iK3lM4nO5="
+      },
+      {
+        "hostname": "se-sto-wg-002",
+        "active": true,
+        "owned": false,
+        "daita": false,
+        "provider": "31173",
+        "location": "se-sto",
+        "ipv4_addr_in": "185.204.1.171",
+        "ipv6_addr_in": "2a03:1b20:6:f011::a01f",
+        "public_key": "cCpSs4o8n0Zy3p4e5x6d7P8o9C0u1F2hI3jL4mN5oP6="
+      },
+      {
+        "hostname": "us-nyc-wg-001",
+        "active": true,
+        "owned": true,
+        "daita": true,
+        "provider": "Mullvad",
+        "location": "us-nyc",
+        "ipv4_addr_in": "68.235.43.10",
+        "ipv6_addr_in": "2607:f7a0:2:a::a01f",
+        "public_key": "dDpTt5p9o1Az4q5f6y7e8Q9p0D1v2G3iJ4kM5nO6pQ7="
+      },
+      {
+        "hostname": "us-lax-wg-001",
+        "active": true,
+        "owned": false,
+        "daita": false,
+        "provider": "xtom",
+        "location": "us-lax",
+        "ipv4_addr_in": "146.70.116.66",
+        "ipv6_addr_in": "2001:ac8:20:9::a01f",
+        "public_key": "eEpUu6q0p2Ba5r6g7z8f9R0q1E2w3H4jK5lN6oP7qR8="
+      },
+      {
+        "hostname": "de-fra-wg-001",
+        "active": true,
+        "owned": true,
+        "daita": true,
+        "provider": "Mullvad",
+        "location": "de-fra",
+        "ipv4_addr_in": "193.32.127.66",
+        "ipv6_addr_in": "2a03:1b20:3:f011::a01f",
+        "public_key": "fFpVv7r1q3Cb6s7h8a9g0S1r2F3x4I5kL6mO7pQ8rS9="
+      },
+      {
+        "hostname": "de-fra-wg-002",
+        "active": false,
+        "owned": true,
+        "daita": false,
+        "provider": "Mullvad",
+        "location": "de-fra",
+        "ipv4_addr_in": "193.32.127.67",
+        "ipv6_addr_in": "2a03:1b20:3:f011::a020",
+        "public_key": "gGpWw8s2r4Dc7t8i9b0h1T2s3G4y5J6lM7nP8qR9sT0="
+      },
+      {
+        "hostname": "xx-nul-wg-001",
+        "active": true,
+        "owned": false,
+        "daita": false,
+        "provider": "ghost",
+        "location": "xx-nul",
+        "ipv4_addr_in": "203.0.113.9",
+        "ipv6_addr_in": "",
+        "public_key": "hHpXx9t3s5Ed8u9j0c1i2U3t4H5z6K7mN8oQ9rS0tU1="
+      }
+    ]
+  },
+  "openvpn": {
+    "ports": [[1194, "udp"], [443, "tcp"]],
+    "relays": [
+      {
+        "hostname": "se-got-ovpn-001",
+        "active": true,
+        "owned": true,
+        "provider": "Mullvad",
+        "location": "se-got",
+        "ipv4_addr_in": "185.213.154.130",
+        "ipv6_addr_in": "2a03:1b20:5:f011::b01f"
+      }
+    ]
+  },
+  "bridge": { "relays": [] }
+}
